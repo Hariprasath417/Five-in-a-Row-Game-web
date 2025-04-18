@@ -1,26 +1,18 @@
-import { Box } from '@mui/material';
+const Cell = ({ value }) => {
+  if (!value) return null;
 
-const Cell = ({ value, onClick }) => (
-  <Box
-    onClick={onClick}
-    sx={{
-      width: 32,
-      height: 32,
-      border: '1px solid #ccc',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '1.25rem',
-      fontWeight: 'bold',
-      cursor: 'pointer',
-      transition: 'background 0.3s',
-      '&:hover': {
-        backgroundColor: '#f0f0f0',
-      },
-    }}
-  >
-    {value}
-  </Box>
-);
+  return (
+    <div
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: '50%',
+        backgroundColor: value === 'X' ? 'black' : 'white',
+        border: value === 'O' ? '1px solid #333' : 'none',
+        boxShadow: 'inset 0 0 3px rgba(0,0,0,0.6)'
+      }}
+    />
+  );
+};
 
 export default Cell;
