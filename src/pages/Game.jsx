@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Box, Container, Typography } from '@mui/material';
+import { Box, Container, Typography, Button, Paper, Grid, Divider } from '@mui/material';
 import Board from '../components/Board';
 import Header from '../components/Header';
 import ControlPanel from '../components/ControlPanel';
@@ -12,6 +12,8 @@ const Game = () => {
   const [aiLastMove, setAiLastMove] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [step, setStep] = useState(0);
+  const [showInfo, setShowInfo] = useState(true);
 
   const hasStarted = useRef(false);
 
@@ -29,9 +31,9 @@ const Game = () => {
     if (!board[row][col] && !gameOver) {
       const updatedBoard = board.map(r => [...r]);
       updatedBoard[row][col] = 'X';
-
       setHistory([...history, board]);
       setBoard(updatedBoard);
+      setStep(step + 1);
 
       const userResponse = await gameService.userMove(gameId, row, col);
 
@@ -48,6 +50,7 @@ const Game = () => {
         updatedBoard[aiMove.row][aiMove.col] = 'O';
         setBoard([...updatedBoard]);
         setAiLastMove({ row: aiMove.row, col: aiMove.col });
+        setStep(step + 2); // One for player, one for AI
 
         if (aiResponse.data.winner) {
           setGameOver(true);
@@ -59,13 +62,12 @@ const Game = () => {
 
   const handleUndo = () => {
     if (gameOver || history.length === 0) return;
-    
     const prevBoard = history[history.length - 1];
     setBoard(prevBoard);
     setHistory(history.slice(0, -1));
     setAiLastMove(null);
+    setStep(step - 2);
   };
-  
 
   const handleRestart = async () => {
     const shouldSave = window.confirm('Do you want to save the current board?');
@@ -80,19 +82,67 @@ const Game = () => {
     setAiLastMove(null);
     setGameOver(false);
     setWinner(null);
+    setStep(0);
   };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'white' }}>
       <Header />
-      <Container maxWidth="md" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4 }}>
-        <Board board={board} onCellClick={handleCellClick} aiLastMove={aiLastMove} />
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Grid container spacing={4}>
+          {/* Board Section */}
+          <Grid item xs={12} md={8} display="flex" justifyContent="center">
+            <Board board={board} onCellClick={handleCellClick} aiLastMove={aiLastMove} />
+          </Grid>
+
+          {/* Side Panel */}
+          <Grid item xs={12} md={4}>
+            <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+              <Button variant="outlined" fullWidth onClick={() => setShowInfo(!showInfo)}>
+                Toggle Info
+              </Button>
+
+              {showInfo && (
+                <>
+                  <Typography variant="subtitle1" sx={{ mt: 2 }}>
+                    <strong>Current Step:</strong> {step}
+                  </Typography>
+                  <Typography variant="subtitle1">
+                    <strong>Total Steps:</strong> {step}
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                    <strong>Whose Turn:</strong> {gameOver ? 'Game Over' : 'Player (Black)'}
+                  </Typography>
+
+                  <Button variant="contained" color="primary" fullWidth sx={{ py: 2, fontSize: '1rem' }}>
+                    Your turn
+                  </Button>
+
+                  <Divider sx={{ my: 3 }} />
+
+                  <Typography variant="body1">
+                    <strong>Player:</strong> Black stones
+                  </Typography>
+                  <Typography variant="body1">
+                    <strong>AI:</strong> White stones
+                  </Typography>
+                </>
+              )}
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Game Over Message */}
         {gameOver && (
-          <Typography variant="h6" sx={{ mt: 2, color: winner === 'user' ? 'green' : 'red', fontWeight: 'bold' }}>
+          <Typography variant="h6" sx={{ mt: 3, color: winner === 'user' ? 'green' : 'red', fontWeight: 'bold', textAlign: 'center' }}>
             Game Over! Winner: {winner === 'user' ? 'You' : 'AI'}
           </Typography>
         )}
-        <ControlPanel onRestart={handleRestart} onUndo={handleUndo} disableUndo={gameOver} />
+
+        {/* Control Panel */}
+        <Box display="flex" justifyContent="center" mt={3}>
+          <ControlPanel onRestart={handleRestart} onUndo={handleUndo} disableUndo={gameOver} />
+        </Box>
       </Container>
     </Box>
   );
